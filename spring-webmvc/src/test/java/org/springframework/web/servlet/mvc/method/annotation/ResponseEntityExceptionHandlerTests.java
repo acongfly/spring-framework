@@ -20,11 +20,10 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+
 import javax.servlet.ServletException;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.ConversionNotSupportedException;
 import org.springframework.beans.TypeMismatchException;
@@ -37,9 +36,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.http.server.ServletServerHttpRequest;
-import org.springframework.mock.web.test.MockHttpServletRequest;
-import org.springframework.mock.web.test.MockHttpServletResponse;
-import org.springframework.mock.web.test.MockServletConfig;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindException;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
@@ -60,8 +56,12 @@ import org.springframework.web.multipart.support.MissingServletRequestPartExcept
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver;
+import org.springframework.web.testfixture.servlet.MockHttpServletRequest;
+import org.springframework.web.testfixture.servlet.MockHttpServletResponse;
+import org.springframework.web.testfixture.servlet.MockServletConfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 /**
  * Test fixture for {@link ResponseEntityExceptionHandler}.
@@ -70,26 +70,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class ResponseEntityExceptionHandlerTests {
 
-	private ResponseEntityExceptionHandler exceptionHandlerSupport;
+	private ResponseEntityExceptionHandler exceptionHandlerSupport = new ApplicationExceptionHandler();
 
-	private DefaultHandlerExceptionResolver defaultExceptionResolver;
+	private DefaultHandlerExceptionResolver defaultExceptionResolver = new DefaultHandlerExceptionResolver();
 
-	private WebRequest request;
+	private MockHttpServletRequest servletRequest = new MockHttpServletRequest("GET", "/");
 
-	private MockHttpServletRequest servletRequest;
+	private MockHttpServletResponse servletResponse = new MockHttpServletResponse();
 
-	private MockHttpServletResponse servletResponse;
-
-
-	@Before
-	public void setup() {
-		this.servletRequest = new MockHttpServletRequest("GET", "/");
-		this.servletResponse = new MockHttpServletResponse();
-		this.request = new ServletWebRequest(this.servletRequest, this.servletResponse);
-
-		this.exceptionHandlerSupport = new ApplicationExceptionHandler();
-		this.defaultExceptionResolver = new DefaultHandlerExceptionResolver();
-	}
+	private WebRequest request = new ServletWebRequest(this.servletRequest, this.servletResponse);
 
 
 	@Test
@@ -179,7 +168,7 @@ public class ResponseEntityExceptionHandlerTests {
 
 	@Test
 	public void methodArgumentNotValid() {
-		Exception ex = Mockito.mock(MethodArgumentNotValidException.class);
+		Exception ex = mock(MethodArgumentNotValidException.class);
 		testException(ex);
 	}
 

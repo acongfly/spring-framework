@@ -21,13 +21,13 @@ import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import org.springframework.core.MethodParameter;
 import org.springframework.messaging.Message;
@@ -49,6 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -57,6 +58,7 @@ import static org.mockito.Mockito.verify;
  * @author Rossen Stoyanchev
  * @author Sebastien Deleuze
  */
+@ExtendWith(MockitoExtension.class)
 public class SubscriptionMethodReturnValueHandlerTests {
 
 	public static final MimeType MIME_TYPE = new MimeType("text", "plain", StandardCharsets.UTF_8);
@@ -64,13 +66,15 @@ public class SubscriptionMethodReturnValueHandlerTests {
 	private static final String PAYLOAD = "payload";
 
 
+	@Mock
+	private MessageChannel messageChannel;
+
+	@Captor
+	private ArgumentCaptor<Message<?>> messageCaptor;
+
 	private SubscriptionMethodReturnValueHandler handler;
 
 	private SubscriptionMethodReturnValueHandler jsonHandler;
-
-	@Mock private MessageChannel messageChannel;
-
-	@Captor private ArgumentCaptor<Message<?>> messageCaptor;
 
 	private MethodParameter subscribeEventReturnType;
 
@@ -81,10 +85,8 @@ public class SubscriptionMethodReturnValueHandlerTests {
 	private MethodParameter subscribeEventJsonViewReturnType;
 
 
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
-		MockitoAnnotations.initMocks(this);
-
 		SimpMessagingTemplate messagingTemplate = new SimpMessagingTemplate(this.messageChannel);
 		messagingTemplate.setMessageConverter(new StringMessageConverter());
 		this.handler = new SubscriptionMethodReturnValueHandler(messagingTemplate);
@@ -148,7 +150,7 @@ public class SubscriptionMethodReturnValueHandlerTests {
 		String destination = "/dest";
 		Message<?> inputMessage = createInputMessage(sessionId, subscriptionId, destination, null);
 
-		MessageSendingOperations messagingTemplate = Mockito.mock(MessageSendingOperations.class);
+		MessageSendingOperations messagingTemplate = mock(MessageSendingOperations.class);
 		SubscriptionMethodReturnValueHandler handler = new SubscriptionMethodReturnValueHandler(messagingTemplate);
 
 		handler.handleReturnValue(PAYLOAD, this.subscribeEventReturnType, inputMessage);
@@ -235,6 +237,7 @@ public class SubscriptionMethodReturnValueHandlerTests {
 
 		private String withoutView;
 
+		@SuppressWarnings("unused")
 		public String getWithView1() {
 			return withView1;
 		}
@@ -243,6 +246,7 @@ public class SubscriptionMethodReturnValueHandlerTests {
 			this.withView1 = withView1;
 		}
 
+		@SuppressWarnings("unused")
 		public String getWithView2() {
 			return withView2;
 		}
@@ -251,6 +255,7 @@ public class SubscriptionMethodReturnValueHandlerTests {
 			this.withView2 = withView2;
 		}
 
+		@SuppressWarnings("unused")
 		public String getWithoutView() {
 			return withoutView;
 		}

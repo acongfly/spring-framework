@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -146,6 +146,7 @@ public class RequestMappingHandlerMapping extends RequestMappingInfoHandlerMappi
 	 * @see #getCustomTypeCondition(Class)
 	 */
 	@Override
+	@Nullable
 	protected RequestMappingInfo getMappingForMethod(Method method, Class<?> handlerType) {
 		RequestMappingInfo info = createRequestMappingInfo(method);
 		if (info != null) {
@@ -159,7 +160,7 @@ public class RequestMappingHandlerMapping extends RequestMappingInfoHandlerMappi
 					if (this.embeddedValueResolver != null) {
 						prefix = this.embeddedValueResolver.resolveStringValue(prefix);
 					}
-					info = RequestMappingInfo.paths(prefix).build().combine(info);
+					info = RequestMappingInfo.paths(prefix).options(this.config).build().combine(info);
 					break;
 				}
 			}
@@ -314,6 +315,9 @@ public class RequestMappingHandlerMapping extends RequestMappingInfoHandlerMappi
 		}
 		for (String origin : annotation.origins()) {
 			config.addAllowedOrigin(resolveCorsAnnotationValue(origin));
+		}
+		for (String patterns : annotation.originPatterns()) {
+			config.addAllowedOriginPattern(resolveCorsAnnotationValue(patterns));
 		}
 		for (RequestMethod method : annotation.methods()) {
 			config.addAllowedMethod(method.name());

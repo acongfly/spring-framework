@@ -21,20 +21,21 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.core.testfixture.security.TestPrincipal;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageType;
-import org.springframework.messaging.simp.TestPrincipal;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.scheduling.TaskScheduler;
 
@@ -56,10 +57,12 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Rossen Stoyanchev
  * @since 4.0
  */
+@ExtendWith(MockitoExtension.class)
 @SuppressWarnings("unchecked")
 public class SimpleBrokerMessageHandlerTests {
 
 	private SimpleBrokerMessageHandler messageHandler;
+
 
 	@Mock
 	private SubscribableChannel clientInChannel;
@@ -77,9 +80,8 @@ public class SimpleBrokerMessageHandlerTests {
 	ArgumentCaptor<Message<?>> messageCaptor;
 
 
-	@Before
+	@BeforeEach
 	public void setup() {
-		MockitoAnnotations.initMocks(this);
 		this.messageHandler = new SimpleBrokerMessageHandler(
 				this.clientInChannel, this.clientOutChannel, this.brokerChannel, Collections.emptyList());
 	}
@@ -178,8 +180,8 @@ public class SimpleBrokerMessageHandlerTests {
 				this.messageHandler::start);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test
+	@SuppressWarnings("rawtypes")
 	public void startAndStopWithHeartbeatValue() {
 		ScheduledFuture future = mock(ScheduledFuture.class);
 		given(this.taskScheduler.scheduleWithFixedDelay(any(Runnable.class), eq(15000L))).willReturn(future);
@@ -197,7 +199,6 @@ public class SimpleBrokerMessageHandlerTests {
 		verifyNoMoreInteractions(future);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void startWithOneZeroHeartbeatValue() {
 		this.messageHandler.setTaskScheduler(this.taskScheduler);

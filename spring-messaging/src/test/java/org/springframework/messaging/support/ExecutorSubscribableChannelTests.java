@@ -18,12 +18,12 @@ package org.springframework.messaging.support;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.messaging.Message;
@@ -38,14 +38,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 
 /**
  * Unit tests for {@link ExecutorSubscribableChannel}.
  *
  * @author Phillip Webb
  */
+@ExtendWith(MockitoExtension.class)
 public class ExecutorSubscribableChannelTests {
 
 	private ExecutorSubscribableChannel channel = new ExecutorSubscribableChannel();
@@ -53,18 +54,12 @@ public class ExecutorSubscribableChannelTests {
 	@Mock
 	private MessageHandler handler;
 
-	private final Object payload = new Object();
-
-	private final Message<Object> message = MessageBuilder.withPayload(this.payload).build();
-
 	@Captor
 	private ArgumentCaptor<Runnable> runnableCaptor;
 
+	private final Object payload = new Object();
 
-	@Before
-	public void setup() {
-		MockitoAnnotations.initMocks(this);
-	}
+	private final Message<Object> message = MessageBuilder.withPayload(this.payload).build();
 
 
 	@Test
@@ -131,7 +126,7 @@ public class ExecutorSubscribableChannelTests {
 		catch (MessageDeliveryException actualException) {
 			assertThat(actualException.getCause()).isEqualTo(ex);
 		}
-		verifyZeroInteractions(secondHandler);
+		verifyNoInteractions(secondHandler);
 	}
 
 	@Test

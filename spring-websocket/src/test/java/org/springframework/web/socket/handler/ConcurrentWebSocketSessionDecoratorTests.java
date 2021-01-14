@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,11 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
-import org.springframework.web.socket.WebSocketMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator.OverflowStrategy;
 
@@ -63,10 +61,10 @@ public class ConcurrentWebSocketSessionDecoratorTests {
 	@Test
 	public void sendAfterBlockedSend() throws IOException, InterruptedException {
 
-		BlockingSession session = new BlockingSession();
+		BlockingWebSocketSession session = new BlockingWebSocketSession();
 		session.setOpen(true);
 
-		final ConcurrentWebSocketSessionDecorator decorator =
+		ConcurrentWebSocketSessionDecorator decorator =
 				new ConcurrentWebSocketSessionDecorator(session, 10 * 1000, 1024);
 
 		sendBlockingMessage(decorator);
@@ -85,13 +83,13 @@ public class ConcurrentWebSocketSessionDecoratorTests {
 	}
 
 	@Test
-	public void sendTimeLimitExceeded() throws IOException, InterruptedException {
+	public void sendTimeLimitExceeded() throws InterruptedException {
 
-		BlockingSession session = new BlockingSession();
+		BlockingWebSocketSession session = new BlockingWebSocketSession();
 		session.setId("123");
 		session.setOpen(true);
 
-		final ConcurrentWebSocketSessionDecorator decorator =
+		ConcurrentWebSocketSessionDecorator decorator =
 				new ConcurrentWebSocketSessionDecorator(session, 100, 1024);
 
 		sendBlockingMessage(decorator);
@@ -109,21 +107,17 @@ public class ConcurrentWebSocketSessionDecoratorTests {
 	@Test
 	public void sendBufferSizeExceeded() throws IOException, InterruptedException {
 
-		BlockingSession session = new BlockingSession();
+		BlockingWebSocketSession session = new BlockingWebSocketSession();
 		session.setId("123");
 		session.setOpen(true);
 
-		final ConcurrentWebSocketSessionDecorator decorator =
+		ConcurrentWebSocketSessionDecorator decorator =
 				new ConcurrentWebSocketSessionDecorator(session, 10*1000, 1024);
 
 		sendBlockingMessage(decorator);
 
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0 ; i < 1023; i++) {
-			sb.append("a");
-		}
-
-		TextMessage message = new TextMessage(sb.toString());
+		String msg = String.format("%1023s", "a");
+		TextMessage message = new TextMessage(msg);
 		decorator.sendMessage(message);
 
 		assertThat(decorator.getBufferSize()).isEqualTo(1023);
@@ -138,34 +132,30 @@ public class ConcurrentWebSocketSessionDecoratorTests {
 	@Test // SPR-17140
 	public void overflowStrategyDrop() throws IOException, InterruptedException {
 
-		BlockingSession session = new BlockingSession();
+		BlockingWebSocketSession session = new BlockingWebSocketSession();
 		session.setId("123");
 		session.setOpen(true);
 
-		final ConcurrentWebSocketSessionDecorator decorator =
+		ConcurrentWebSocketSessionDecorator decorator =
 				new ConcurrentWebSocketSessionDecorator(session, 10*1000, 1024, OverflowStrategy.DROP);
 
 		sendBlockingMessage(decorator);
 
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0 ; i < 1023; i++) {
-			sb.append("a");
-		}
+		String msg = String.format("%1023s", "a");
 
-		for (int i=0; i < 5; i++) {
-			TextMessage message = new TextMessage(sb.toString());
+		for (int i = 0; i < 5; i++) {
+			TextMessage message = new TextMessage(msg);
 			decorator.sendMessage(message);
 		}
 
 		assertThat(decorator.getBufferSize()).isEqualTo(1023);
 		assertThat(session.isOpen()).isTrue();
-
 	}
 
 	@Test
 	public void closeStatusNormal() throws Exception {
 
-		BlockingSession session = new BlockingSession();
+		BlockingWebSocketSession session = new BlockingWebSocketSession();
 		session.setOpen(true);
 		WebSocketSession decorator = new ConcurrentWebSocketSessionDecorator(session, 10 * 1000, 1024);
 
@@ -179,18 +169,18 @@ public class ConcurrentWebSocketSessionDecoratorTests {
 	@Test
 	public void closeStatusChangesToSessionNotReliable() throws Exception {
 
-		BlockingSession session = new BlockingSession();
+		BlockingWebSocketSession session = new BlockingWebSocketSession();
 		session.setId("123");
 		session.setOpen(true);
-		CountDownLatch sentMessageLatch = session.getSentMessageLatch();
+		CountDownLatch sentMessageLatch = session.initSendLatch();
 
 		int sendTimeLimit = 100;
 		int bufferSizeLimit = 1024;
 
-		final ConcurrentWebSocketSessionDecorator decorator =
+		ConcurrentWebSocketSessionDecorator decorator =
 				new ConcurrentWebSocketSessionDecorator(session, sendTimeLimit, bufferSizeLimit);
 
-		Executors.newSingleThreadExecutor().submit((Runnable) () -> {
+		Executors.newSingleThreadExecutor().submit(() -> {
 			TextMessage message = new TextMessage("slow message");
 			try {
 				decorator.sendMessage(message);
@@ -207,10 +197,13 @@ public class ConcurrentWebSocketSessionDecoratorTests {
 
 		decorator.close(CloseStatus.PROTOCOL_ERROR);
 
-		assertThat(session.getCloseStatus()).as("CloseStatus should have changed to SESSION_NOT_RELIABLE").isEqualTo(CloseStatus.SESSION_NOT_RELIABLE);
+		assertThat(session.getCloseStatus())
+				.as("CloseStatus should have changed to SESSION_NOT_RELIABLE")
+				.isEqualTo(CloseStatus.SESSION_NOT_RELIABLE);
 	}
 
 	private void sendBlockingMessage(ConcurrentWebSocketSessionDecorator session) throws InterruptedException {
+		CountDownLatch latch = ((BlockingWebSocketSession) session.getDelegate()).initSendLatch();
 		Executors.newSingleThreadExecutor().submit(() -> {
 			TextMessage message = new TextMessage("slow message");
 			try {
@@ -220,43 +213,7 @@ public class ConcurrentWebSocketSessionDecoratorTests {
 				e.printStackTrace();
 			}
 		});
-		BlockingSession delegate = (BlockingSession) session.getDelegate();
-		assertThat(delegate.getSentMessageLatch().await(5, TimeUnit.SECONDS)).isTrue();
-	}
-
-
-
-	private static class BlockingSession extends TestWebSocketSession {
-
-		private AtomicReference<CountDownLatch> nextMessageLatch = new AtomicReference<>();
-
-		private AtomicReference<CountDownLatch> releaseLatch = new AtomicReference<>();
-
-
-		public CountDownLatch getSentMessageLatch() {
-			this.nextMessageLatch.set(new CountDownLatch(1));
-			return this.nextMessageLatch.get();
-		}
-
-		@Override
-		public void sendMessage(WebSocketMessage<?> message) throws IOException {
-			super.sendMessage(message);
-			if (this.nextMessageLatch != null) {
-				this.nextMessageLatch.get().countDown();
-			}
-			block();
-		}
-
-		private void block() {
-			try {
-				this.releaseLatch.set(new CountDownLatch(1));
-				this.releaseLatch.get().await();
-			}
-			catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-
+		assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue();
 	}
 
 }

@@ -24,9 +24,8 @@ import org.springframework.test.annotation.Timed;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.transaction.TransactionAssert.assertThatTransaction;
 
 /**
  * JUnit 4 based integration test which verifies support of Spring's
@@ -36,6 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Sam Brannen
  * @since 2.5
+ * @see org.springframework.test.context.junit.jupiter.transaction.TimedTransactionalSpringExtensionTests
  */
 @RunWith(SpringRunner.class)
 @ContextConfiguration("transactionalTests-context.xml")
@@ -46,13 +46,13 @@ public class TimedTransactionalSpringRunnerTests {
 	@Timed(millis = 10000)
 	@Repeat(5)
 	public void transactionalWithSpringTimeout() {
-		assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isTrue();
+		assertThatTransaction().isActive();
 	}
 
 	@Test(timeout = 10000)
 	@Repeat(5)
 	public void transactionalWithJUnitTimeout() {
-		assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isTrue();
+		assertThatTransaction().isActive();
 	}
 
 	@Test
@@ -60,14 +60,14 @@ public class TimedTransactionalSpringRunnerTests {
 	@Timed(millis = 10000)
 	@Repeat(5)
 	public void notTransactionalWithSpringTimeout() {
-		assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+		assertThatTransaction().isNotActive();
 	}
 
 	@Test(timeout = 10000)
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	@Repeat(5)
 	public void notTransactionalWithJUnitTimeout() {
-		assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+		assertThatTransaction().isNotActive();
 	}
 
 }

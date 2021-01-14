@@ -22,7 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Arrays;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -130,6 +130,14 @@ public class ImportAwareTests {
 	public void metadataFromImportsTwoThenOne() {
 		AnnotationMetadata importMetadata = new AnnotationConfigApplicationContext(
 				ConfigurationTwo.class, ConfigurationOne.class)
+				.getBean(MetadataHolder.class).importMetadata;
+		assertThat(((StandardAnnotationMetadata) importMetadata).getIntrospectedClass()).isEqualTo(ConfigurationOne.class);
+	}
+
+	@Test
+	public void metadataFromImportsOneThenThree() {
+		AnnotationMetadata importMetadata = new AnnotationConfigApplicationContext(
+				ConfigurationOne.class, ConfigurationThree.class)
 				.getBean(MetadataHolder.class).importMetadata;
 		assertThat(((StandardAnnotationMetadata) importMetadata).getIntrospectedClass()).isEqualTo(ConfigurationOne.class);
 	}
@@ -285,6 +293,13 @@ public class ImportAwareTests {
 	@EnableSomeConfiguration("foo")
 	@Configuration
 	public static class ConfigurationTwo {
+	}
+
+
+	@Conditional(OnMissingBeanCondition.class)
+	@EnableLiteConfiguration("foo")
+	@Configuration
+	public static class ConfigurationThree {
 	}
 
 

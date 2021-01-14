@@ -23,16 +23,17 @@ import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
 import javax.security.auth.Subject;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import org.springframework.core.MethodParameter;
 import org.springframework.core.annotation.AliasFor;
@@ -58,6 +59,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -68,6 +70,7 @@ import static org.mockito.Mockito.verify;
  * @author Sebastien Deleuze
  * @author Stephane Nicoll
  */
+@ExtendWith(MockitoExtension.class)
 public class SendToMethodReturnValueHandlerTests {
 
 	private static final MimeType MIME_TYPE = new MimeType("text", "plain", StandardCharsets.UTF_8);
@@ -75,15 +78,17 @@ public class SendToMethodReturnValueHandlerTests {
 	private static final String PAYLOAD = "payload";
 
 
+	@Mock
+	private MessageChannel messageChannel;
+
+	@Captor
+	private ArgumentCaptor<Message<?>> messageCaptor;
+
 	private SendToMethodReturnValueHandler handler;
 
 	private SendToMethodReturnValueHandler handlerAnnotationNotRequired;
 
 	private SendToMethodReturnValueHandler jsonHandler;
-
-	@Mock private MessageChannel messageChannel;
-
-	@Captor private ArgumentCaptor<Message<?>> messageCaptor;
 
 	private MethodParameter noAnnotationsReturnType = param("handleNoAnnotations");
 	private MethodParameter sendToReturnType = param("handleAndSendTo");
@@ -116,10 +121,8 @@ public class SendToMethodReturnValueHandlerTests {
 	}
 
 
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
-		MockitoAnnotations.initMocks(this);
-
 		SimpMessagingTemplate messagingTemplate = new SimpMessagingTemplate(this.messageChannel);
 		messagingTemplate.setMessageConverter(new StringMessageConverter());
 		this.handler = new SendToMethodReturnValueHandler(messagingTemplate, true);
@@ -319,7 +322,7 @@ public class SendToMethodReturnValueHandlerTests {
 	public void testHeadersToSend() throws Exception {
 		Message<?> message = createMessage("sess1", "sub1", "/app", "/dest", null);
 
-		SimpMessageSendingOperations messagingTemplate = Mockito.mock(SimpMessageSendingOperations.class);
+		SimpMessageSendingOperations messagingTemplate = mock(SimpMessageSendingOperations.class);
 		SendToMethodReturnValueHandler handler = new SendToMethodReturnValueHandler(messagingTemplate, false);
 
 		handler.handleReturnValue(PAYLOAD, this.noAnnotationsReturnType, message);
@@ -630,10 +633,12 @@ public class SendToMethodReturnValueHandlerTests {
 
 	private static class TestUser implements Principal {
 
+		@Override
 		public String getName() {
 			return "joe";
 		}
 
+		@Override
 		public boolean implies(Subject subject) {
 			return false;
 		}

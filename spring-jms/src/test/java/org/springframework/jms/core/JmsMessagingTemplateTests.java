@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.springframework.jms.core;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
@@ -26,13 +27,13 @@ import javax.jms.MessageNotWriteableException;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.BDDMockito;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -65,6 +66,7 @@ import static org.mockito.Mockito.verify;
  *
  * @author Stephane Nicoll
  */
+@ExtendWith(MockitoExtension.class)
 public class JmsMessagingTemplateTests {
 
 	@Captor
@@ -76,9 +78,8 @@ public class JmsMessagingTemplateTests {
 	private JmsMessagingTemplate messagingTemplate;
 
 
-	@Before
+	@BeforeEach
 	public void setup() {
-		MockitoAnnotations.initMocks(this);
 		this.messagingTemplate = new JmsMessagingTemplate(this.jmsTemplate);
 	}
 
@@ -108,8 +109,6 @@ public class JmsMessagingTemplateTests {
 
 	@Test
 	public void customConverterAlwaysTakesPrecedence() {
-		MessageConverter messageConverter = mock(MessageConverter.class);
-		given(this.jmsTemplate.getMessageConverter()).willReturn(messageConverter);
 		MessageConverter customMessageConverter = mock(MessageConverter.class);
 		JmsMessagingTemplate messagingTemplate = new JmsMessagingTemplate();
 		messagingTemplate.setJmsMessageConverter(
@@ -648,12 +647,12 @@ public class JmsMessagingTemplateTests {
 
 	protected TextMessage createTextMessage(MessageCreator creator) throws JMSException {
 		Session mock = mock(Session.class);
-		given(mock.createTextMessage(BDDMockito.any())).willAnswer(
+		given(mock.createTextMessage(any())).willAnswer(
 				(Answer<TextMessage>) invocation ->
 						new StubTextMessage((String) invocation.getArguments()[0]));
 		javax.jms.Message message = creator.createMessage(mock);
-		verify(mock).createTextMessage(BDDMockito.any());
-		return TextMessage.class.cast(message);
+		verify(mock).createTextMessage(any());
+		return (TextMessage) message;
 	}
 
 }
