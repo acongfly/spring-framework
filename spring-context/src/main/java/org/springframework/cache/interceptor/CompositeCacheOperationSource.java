@@ -57,6 +57,16 @@ public class CompositeCacheOperationSource implements CacheOperationSource, Seri
 
 
 	@Override
+	public boolean isCandidateClass(Class<?> targetClass) {
+		for (CacheOperationSource source : this.cacheOperationSources) {
+			if (source.isCandidateClass(targetClass)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Override
 	@Nullable
 	public Collection<CacheOperation> getCacheOperations(Method method, @Nullable Class<?> targetClass) {
 		Collection<CacheOperation> ops = null;

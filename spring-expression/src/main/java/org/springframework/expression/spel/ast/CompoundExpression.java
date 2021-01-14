@@ -16,6 +16,8 @@
 
 package org.springframework.expression.spel.ast;
 
+import java.util.StringJoiner;
+
 import org.springframework.asm.MethodVisitor;
 import org.springframework.expression.EvaluationException;
 import org.springframework.expression.TypedValue;
@@ -33,8 +35,8 @@ import org.springframework.lang.Nullable;
  */
 public class CompoundExpression extends SpelNodeImpl {
 
-	public CompoundExpression(int pos, SpelNodeImpl... expressionComponents) {
-		super(pos, expressionComponents);
+	public CompoundExpression(int startPos, int endPos, SpelNodeImpl... expressionComponents) {
+		super(startPos, endPos, expressionComponents);
 		if (expressionComponents.length < 2) {
 			throw new IllegalStateException("Do not build compound expressions with less than two entries: " +
 					expressionComponents.length);
@@ -104,14 +106,11 @@ public class CompoundExpression extends SpelNodeImpl {
 
 	@Override
 	public String toStringAST() {
-		StringBuilder sb = new StringBuilder();
+		StringJoiner sj = new StringJoiner(".");
 		for (int i = 0; i < getChildCount(); i++) {
-			if (i > 0) {
-				sb.append(".");
-			}
-			sb.append(getChild(i).toStringAST());
+			sj.add(getChild(i).toStringAST());
 		}
-		return sb.toString();
+		return sj.toString();
 	}
 
 	@Override

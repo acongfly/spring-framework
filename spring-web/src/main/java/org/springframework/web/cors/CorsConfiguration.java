@@ -16,6 +16,7 @@
 
 package org.springframework.web.cors;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -302,6 +303,16 @@ public class CorsConfiguration {
 	@Nullable
 	public Boolean getAllowCredentials() {
 		return this.allowCredentials;
+	}
+
+	/**
+	 * Configure how long, as a duration, the response from a pre-flight request
+	 * can be cached by clients.
+	 * @since 5.2
+	 * @see #setMaxAge(Long)
+	 */
+	public void setMaxAge(Duration maxAge) {
+		this.maxAge = maxAge.getSeconds();
 	}
 
 	/**

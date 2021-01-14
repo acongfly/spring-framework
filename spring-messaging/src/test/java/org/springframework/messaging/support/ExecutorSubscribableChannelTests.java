@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,7 @@ package org.springframework.messaging.support;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -33,9 +31,15 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.MessageHandler;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-import static org.mockito.BDDMockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 /**
  * Unit tests for {@link ExecutorSubscribableChannel}.
@@ -43,9 +47,6 @@ import static org.mockito.BDDMockito.*;
  * @author Phillip Webb
  */
 public class ExecutorSubscribableChannelTests {
-
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
 
 	private ExecutorSubscribableChannel channel = new ExecutorSubscribableChannel();
 
@@ -68,9 +69,9 @@ public class ExecutorSubscribableChannelTests {
 
 	@Test
 	public void messageMustNotBeNull() {
-		thrown.expect(IllegalArgumentException.class);
-		thrown.expectMessage("Message must not be null");
-		this.channel.send(null);
+		assertThatIllegalArgumentException().isThrownBy(() ->
+				this.channel.send(null))
+			.withMessageContaining("Message must not be null");
 	}
 
 	@Test
@@ -80,8 +81,8 @@ public class ExecutorSubscribableChannelTests {
 		this.channel.subscribe(this.handler);
 		this.channel.send(this.message);
 		verify(this.handler).handleMessage(this.message);
-		assertEquals(1, interceptor.getCounter().get());
-		assertTrue(interceptor.wasAfterHandledInvoked());
+		assertThat(interceptor.getCounter().get()).isEqualTo(1);
+		assertThat(interceptor.wasAfterHandledInvoked()).isTrue();
 	}
 
 	@Test
@@ -96,14 +97,14 @@ public class ExecutorSubscribableChannelTests {
 		verify(this.handler, never()).handleMessage(this.message);
 		this.runnableCaptor.getValue().run();
 		verify(this.handler).handleMessage(this.message);
-		assertEquals(1, interceptor.getCounter().get());
-		assertTrue(interceptor.wasAfterHandledInvoked());
+		assertThat(interceptor.getCounter().get()).isEqualTo(1);
+		assertThat(interceptor.wasAfterHandledInvoked()).isTrue();
 	}
 
 	@Test
 	public void subscribeTwice()  {
-		assertThat(this.channel.subscribe(this.handler), equalTo(true));
-		assertThat(this.channel.subscribe(this.handler), equalTo(false));
+		assertThat(this.channel.subscribe(this.handler)).isEqualTo(true);
+		assertThat(this.channel.subscribe(this.handler)).isEqualTo(false);
 		this.channel.send(this.message);
 		verify(this.handler, times(1)).handleMessage(this.message);
 	}
@@ -111,8 +112,8 @@ public class ExecutorSubscribableChannelTests {
 	@Test
 	public void unsubscribeTwice()  {
 		this.channel.subscribe(this.handler);
-		assertThat(this.channel.unsubscribe(this.handler), equalTo(true));
-		assertThat(this.channel.unsubscribe(this.handler), equalTo(false));
+		assertThat(this.channel.unsubscribe(this.handler)).isEqualTo(true);
+		assertThat(this.channel.unsubscribe(this.handler)).isEqualTo(false);
 		this.channel.send(this.message);
 		verify(this.handler, never()).handleMessage(this.message);
 	}
@@ -128,7 +129,7 @@ public class ExecutorSubscribableChannelTests {
 			this.channel.send(message);
 		}
 		catch (MessageDeliveryException actualException) {
-			assertThat(actualException.getCause(), equalTo(ex));
+			assertThat(actualException.getCause()).isEqualTo(ex);
 		}
 		verifyZeroInteractions(secondHandler);
 	}
@@ -150,8 +151,8 @@ public class ExecutorSubscribableChannelTests {
 		this.channel.subscribe(this.handler);
 		this.channel.send(this.message);
 		verify(this.handler).handleMessage(expected);
-		assertEquals(1, interceptor.getCounter().get());
-		assertTrue(interceptor.wasAfterHandledInvoked());
+		assertThat(interceptor.getCounter().get()).isEqualTo(1);
+		assertThat(interceptor.wasAfterHandledInvoked()).isTrue();
 	}
 
 	@Test
@@ -163,9 +164,9 @@ public class ExecutorSubscribableChannelTests {
 		this.channel.subscribe(this.handler);
 		this.channel.send(this.message);
 		verifyNoMoreInteractions(this.handler);
-		assertEquals(1, interceptor1.getCounter().get());
-		assertEquals(1, interceptor2.getCounter().get());
-		assertTrue(interceptor1.wasAfterHandledInvoked());
+		assertThat(interceptor1.getCounter().get()).isEqualTo(1);
+		assertThat(interceptor2.getCounter().get()).isEqualTo(1);
+		assertThat(interceptor1.wasAfterHandledInvoked()).isTrue();
 	}
 
 	@Test
@@ -179,11 +180,11 @@ public class ExecutorSubscribableChannelTests {
 			this.channel.send(this.message);
 		}
 		catch (MessageDeliveryException actual) {
-			assertSame(expected, actual.getCause());
+			assertThat(actual.getCause()).isSameAs(expected);
 		}
 		verify(this.handler).handleMessage(this.message);
-		assertEquals(1, interceptor.getCounter().get());
-		assertTrue(interceptor.wasAfterHandledInvoked());
+		assertThat(interceptor.getCounter().get()).isEqualTo(1);
+		assertThat(interceptor.wasAfterHandledInvoked()).isTrue();
 	}
 
 
@@ -203,7 +204,7 @@ public class ExecutorSubscribableChannelTests {
 
 		@Override
 		public Message<?> beforeHandle(Message<?> message, MessageChannel channel, MessageHandler handler) {
-			assertNotNull(message);
+			assertThat(message).isNotNull();
 			counter.incrementAndGet();
 			return message;
 		}

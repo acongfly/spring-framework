@@ -81,7 +81,8 @@ public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
 
 	private final List<HandlerInterceptor> adaptedInterceptors = new ArrayList<>();
 
-	private CorsConfigurationSource corsConfigurationSource = new UrlBasedCorsConfigurationSource();
+	@Nullable
+	private CorsConfigurationSource corsConfigurationSource;
 
 	private CorsProcessor corsProcessor = new DefaultCorsProcessor();
 
@@ -206,11 +207,17 @@ public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
 	 */
 	public void setCorsConfigurations(Map<String, CorsConfiguration> corsConfigurations) {
 		Assert.notNull(corsConfigurations, "corsConfigurations must not be null");
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.setCorsConfigurations(corsConfigurations);
-		source.setPathMatcher(this.pathMatcher);
-		source.setUrlPathHelper(this.urlPathHelper);
-		this.corsConfigurationSource = source;
+		if (!corsConfigurations.isEmpty()) {
+			UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+			source.setCorsConfigurations(corsConfigurations);
+			source.setPathMatcher(this.pathMatcher);
+			source.setUrlPathHelper(this.urlPathHelper);
+			source.setLookupPathAttributeName(LOOKUP_PATH);
+			this.corsConfigurationSource = source;
+		}
+		else {
+			this.corsConfigurationSource = null;
+		}
 	}
 
 	/**
@@ -222,22 +229,6 @@ public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
 	public void setCorsConfigurationSource(CorsConfigurationSource corsConfigurationSource) {
 		Assert.notNull(corsConfigurationSource, "corsConfigurationSource must not be null");
 		this.corsConfigurationSource = corsConfigurationSource;
-	}
-
-	/**
-	 * Get the "global" CORS configurations.
-	 * @deprecated as of 5.1 since it is now possible to set a {@link CorsConfigurationSource} which is not a
-	 * {@link UrlBasedCorsConfigurationSource}. Expected to be removed in 5.2.
-	 */
-	@Deprecated
-	public Map<String, CorsConfiguration> getCorsConfigurations() {
-		if (this.corsConfigurationSource instanceof UrlBasedCorsConfigurationSource) {
-			return ((UrlBasedCorsConfigurationSource) this.corsConfigurationSource).getCorsConfigurations();
-		}
-		else {
-			throw new IllegalStateException("No CORS configurations available when the source " +
-					"is not an UrlBasedCorsConfigurationSource");
-		}
 	}
 
 	/**
@@ -420,10 +411,10 @@ public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
 			logger.debug("Mapped to " + executionChain.getHandler());
 		}
 
-		if (CorsUtils.isCorsRequest(request)) {
-			CorsConfiguration globalConfig = this.corsConfigurationSource.getCorsConfiguration(request);
+		if (hasCorsConfigurationSource(handler)) {
+			CorsConfiguration config = (this.corsConfigurationSource != null ? this.corsConfigurationSource.getCorsConfiguration(request) : null);
 			CorsConfiguration handlerConfig = getCorsConfiguration(handler, request);
-			CorsConfiguration config = (globalConfig != null ? globalConfig.combine(handlerConfig) : handlerConfig);
+			config = (config != null ? config.combine(handlerConfig) : handlerConfig);
 			executionChain = getCorsHandlerExecutionChain(request, executionChain, config);
 		}
 
@@ -473,7 +464,7 @@ public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
 		HandlerExecutionChain chain = (handler instanceof HandlerExecutionChain ?
 				(HandlerExecutionChain) handler : new HandlerExecutionChain(handler));
 
-		String lookupPath = this.urlPathHelper.getLookupPathForRequest(request);
+		String lookupPath = this.urlPathHelper.getLookupPathForRequest(request, LOOKUP_PATH);
 		for (HandlerInterceptor interceptor : this.adaptedInterceptors) {
 			if (interceptor instanceof MappedInterceptor) {
 				MappedInterceptor mappedInterceptor = (MappedInterceptor) interceptor;
@@ -486,6 +477,14 @@ public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
 			}
 		}
 		return chain;
+	}
+
+	/**
+	 * Return {@code true} if there is a {@link CorsConfigurationSource} for this handler.
+	 * @since 5.2
+	 */
+	protected boolean hasCorsConfigurationSource(Object handler) {
+		return handler instanceof CorsConfigurationSource || this.corsConfigurationSource != null;
 	}
 
 	/**
@@ -527,7 +526,7 @@ public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
 			chain = new HandlerExecutionChain(new PreFlightHandler(config), interceptors);
 		}
 		else {
-			chain.addInterceptor(new CorsInterceptor(config));
+			chain.addInterceptor(0, new CorsInterceptor(config));
 		}
 		return chain;
 	}

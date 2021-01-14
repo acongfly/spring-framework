@@ -20,21 +20,21 @@ To use the elements in the `jee` schema, you need to have the following preamble
 of your Spring XML configuration file. The text in the following snippet references the
 correct schema so that the elements in the `jee` namespace are available to you:
 
-====
 [source,xml,indent=0]
 [subs="verbatim,quotes"]
 ----
 	<?xml version="1.0" encoding="UTF-8"?>
 	<beans xmlns="http://www.springframework.org/schema/beans"
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		__xmlns:jee="http://www.springframework.org/schema/jee"__ xsi:schemaLocation="
+		xmlns:jee="http://www.springframework.org/schema/jee"
+		xsi:schemaLocation="
 			http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
-			__http://www.springframework.org/schema/jee https://www.springframework.org/schema/jee/spring-jee.xsd"__>
+			http://www.springframework.org/schema/jee https://www.springframework.org/schema/jee/spring-jee.xsd">
 
 		<!-- bean definitions here -->
+
 	</beans>
 ----
-====
 
 
 
@@ -43,7 +43,6 @@ correct schema so that the elements in the `jee` namespace are available to you:
 
 The following example shows how to use JNDI to look up a data source without the `jee` schema:
 
-====
 [source,xml,indent=0]
 [subs="verbatim,quotes"]
 ----
@@ -55,12 +54,10 @@ The following example shows how to use JNDI to look up a data source without the
 		<property name="dataSource" ref="dataSource"/>
 	</bean>
 ----
-====
 
 The following example shows how to use JNDI to look up a data source with the `jee`
 schema:
 
-====
 [source,xml,indent=0]
 [subs="verbatim,quotes"]
 ----
@@ -71,7 +68,6 @@ schema:
 		<property name="dataSource" ref="dataSource"/>
 	</bean>
 ----
-====
 
 
 
@@ -81,7 +77,6 @@ schema:
 The following example shows how to use JNDI to look up an environment variable without
 `jee`:
 
-====
 [source,xml,indent=0]
 [subs="verbatim,quotes"]
 ----
@@ -94,7 +89,6 @@ The following example shows how to use JNDI to look up an environment variable w
 		</property>
 	</bean>
 ----
-====
 
 The following example shows how to use JNDI to look up an environment variable with `jee`:
 
@@ -113,7 +107,6 @@ The following example shows how to use JNDI to look up an environment variable w
 The following example shows how to use JNDI to look up multiple environment variables
 without `jee`:
 
-====
 [source,xml,indent=0]
 [subs="verbatim,quotes"]
 ----
@@ -127,12 +120,10 @@ without `jee`:
 		</property>
 	</bean>
 ----
-====
 
 The following example shows how to use JNDI to look up multiple environment variables with
 `jee`:
 
-====
 [source,xml,indent=0]
 [subs="verbatim,quotes"]
 ----
@@ -144,7 +135,6 @@ The following example shows how to use JNDI to look up multiple environment vari
 		</jee:environment>
 	</jee:jndi-lookup>
 ----
-====
 
 
 [[xsd-schemas-jee-jndi-lookup-complex]]
@@ -153,7 +143,6 @@ The following example shows how to use JNDI to look up multiple environment vari
 The following example shows how to use JNDI to look up a data source and a number of
 different properties without `jee`:
 
-====
 [source,xml,indent=0]
 [subs="verbatim,quotes"]
 ----
@@ -166,12 +155,10 @@ different properties without `jee`:
 		<property name="proxyInterface" value="com.myapp.Thing"/>
 	</bean>
 ----
-====
 
 The following example shows how to use JNDI to look up a data source and a number of
 different properties with `jee`:
 
-====
 [source,xml,indent=0]
 [subs="verbatim,quotes"]
 ----
@@ -183,7 +170,6 @@ different properties with `jee`:
 			expected-type="com.myapp.DefaultThing"
 			proxy-interface="com.myapp.Thing"/>
 ----
-====
 
 
 
@@ -195,7 +181,6 @@ The `<jee:local-slsb/>` element configures a reference to a local EJB Stateless 
 The following example shows how to configures a reference to a local EJB Stateless Session Bean
 without `jee`:
 
-====
 [source,xml,indent=0]
 [subs="verbatim,quotes"]
 ----
@@ -205,19 +190,16 @@ without `jee`:
 		<property name="businessInterface" value="com.foo.service.RentalService"/>
 	</bean>
 ----
-====
 
 The following example shows how to configures a reference to a local EJB Stateless Session Bean
 with `jee`:
 
-====
 [source,xml,indent=0]
 [subs="verbatim,quotes"]
 ----
 	<jee:local-slsb id="simpleSlsb" jndi-name="ejb/RentalServiceBean"
 			business-interface="com.foo.service.RentalService"/>
 ----
-====
 
 
 
@@ -229,7 +211,6 @@ The `<jee:local-slsb/>` element configures a reference to a local EJB Stateless 
 The following example shows how to configures a reference to a local EJB Stateless Session Bean
 and a number of properties without `jee`:
 
-====
 [source,xml,indent=0]
 [subs="verbatim,quotes"]
 ----
@@ -242,12 +223,10 @@ and a number of properties without `jee`:
 		<property name="resourceRef" value="true"/>
 	</bean>
 ----
-====
 
 The following example shows how to configures a reference to a local EJB Stateless Session Bean
 and a number of properties with `jee`:
 
-====
 [source,xml,indent=0]
 [subs="verbatim,quotes"]
 ----
@@ -258,7 +237,6 @@ and a number of properties with `jee`:
 			lookup-home-on-startup="true"
 			resource-ref="true">
 ----
-====
 
 
 [[xsd-schemas-jee-remote-slsb]]
@@ -269,7 +247,6 @@ The `<jee:remote-slsb/>` element configures a reference to a `remote` EJB Statel
 The following example shows how to configures a reference to a remote EJB Stateless Session Bean
 without `jee`:
 
-====
 [source,xml,indent=0]
 [subs="verbatim,quotes"]
 ----
@@ -284,12 +261,10 @@ without `jee`:
 		<property name="refreshHomeOnConnectFailure" value="true"/>
 	</bean>
 ----
-====
 
 The following example shows how to configures a reference to a remote EJB Stateless Session Bean
 with `jee`:
 
-====
 [source,xml,indent=0]
 [subs="verbatim,quotes"]
 ----
@@ -302,7 +277,6 @@ with `jee`:
 			home-interface="com.foo.service.RentalService"
 			refresh-home-on-connect-failure="true">
 ----
-====
 
 
 
@@ -320,21 +294,21 @@ the following preamble at the top of your Spring XML configuration file. The tex
 following snippet references the correct schema so that the elements in the `jms` namespace
 are available to you:
 
-====
 [source,xml,indent=0]
 [subs="verbatim,quotes"]
 ----
 	<?xml version="1.0" encoding="UTF-8"?>
 	<beans xmlns="http://www.springframework.org/schema/beans"
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		__xmlns:jms="http://www.springframework.org/schema/jms"__ xsi:schemaLocation="
+		xmlns:jms="http://www.springframework.org/schema/jms"
+		xsi:schemaLocation="
 			http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
-			__http://www.springframework.org/schema/jms https://www.springframework.org/schema/jms/spring-jms.xsd"__>
+			http://www.springframework.org/schema/jms https://www.springframework.org/schema/jms/spring-jms.xsd">
 
 		<!-- bean definitions here -->
+
 	</beans>
 ----
-====
 
 
 
@@ -358,18 +332,18 @@ To use the elements in the `cache` schema, you need to have the following preamb
 top of your Spring XML configuration file. The text in the following snippet references
 the correct schema so that the elements in the `cache` namespace are available to you:
 
-====
 [source,xml,indent=0]
 [subs="verbatim,quotes"]
 ----
 	<?xml version="1.0" encoding="UTF-8"?>
 	<beans xmlns="http://www.springframework.org/schema/beans"
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		__xmlns:cache="http://www.springframework.org/schema/cache"__ xsi:schemaLocation="
+		xmlns:cache="http://www.springframework.org/schema/cache"
+		xsi:schemaLocation="
 			http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
-			__http://www.springframework.org/schema/cache https://www.springframework.org/schema/cache/spring-cache.xsd"__>
+			http://www.springframework.org/schema/cache https://www.springframework.org/schema/cache/spring-cache.xsd">
 
 		<!-- bean definitions here -->
+
 	</beans>
 ----
-====

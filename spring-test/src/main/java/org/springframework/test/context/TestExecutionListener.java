@@ -56,11 +56,14 @@ package org.springframework.test.context;
  * TransactionalTestExecutionListener}</li>
  * <li>{@link org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener
  * SqlScriptsTestExecutionListener}</li>
+ * <li>{@link org.springframework.test.context.event.EventPublishingTestExecutionListener
+ * EventPublishingTestExecutionListener}</li>
  * </ul>
  *
  * @author Sam Brannen
  * @author Juergen Hoeller
  * @since 2.5
+ * @see TestExecutionListeners @TestExecutionListeners
  * @see TestContextManager
  * @see org.springframework.test.context.support.AbstractTestExecutionListener
  */

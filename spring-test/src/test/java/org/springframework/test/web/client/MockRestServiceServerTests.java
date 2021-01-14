@@ -23,10 +23,13 @@ import org.junit.Test;
 import org.springframework.test.web.client.MockRestServiceServer.MockRestServiceServerBuilder;
 import org.springframework.web.client.RestTemplate;
 
-import static org.junit.Assert.*;
-import static org.springframework.http.HttpMethod.*;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.fail;
+import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.test.web.client.ExpectedCount.once;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 /**
  * Unit tests for {@link MockRestServiceServer}.
@@ -60,14 +63,15 @@ public class MockRestServiceServerTests {
 		server.verify();
 	}
 
-	@Test(expected = AssertionError.class)
+	@Test
 	public void exactExpectOrder() {
 		MockRestServiceServer server = MockRestServiceServer.bindTo(this.restTemplate)
 				.ignoreExpectOrder(false).build();
 
 		server.expect(requestTo("/foo")).andRespond(withSuccess());
 		server.expect(requestTo("/bar")).andRespond(withSuccess());
-		this.restTemplate.getForObject("/bar", Void.class);
+		assertThatExceptionOfType(AssertionError.class).isThrownBy(() ->
+				this.restTemplate.getForObject("/bar", Void.class));
 	}
 
 	@Test
@@ -132,6 +136,21 @@ public class MockRestServiceServerTests {
 		}
 
 		server.verify();
+	}
+
+	@Test  // gh-21799
+	public void verifyShouldFailIfRequestsFailed() {
+		MockRestServiceServer server = MockRestServiceServer.bindTo(this.restTemplate).build();
+		server.expect(once(), requestTo("/remoteurl")).andRespond(withSuccess());
+
+		this.restTemplate.postForEntity("/remoteurl", null, String.class);
+		assertThatExceptionOfType(AssertionError.class).isThrownBy(() ->
+				this.restTemplate.postForEntity("/remoteurl", null, String.class))
+			.withMessageStartingWith("No further requests expected");
+
+		assertThatExceptionOfType(AssertionError.class).isThrownBy(
+				server::verify)
+			.withMessageStartingWith("Some requests did not execute successfully");
 	}
 
 }

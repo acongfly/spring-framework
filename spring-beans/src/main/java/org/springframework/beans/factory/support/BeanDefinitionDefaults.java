@@ -28,7 +28,8 @@ import org.springframework.util.StringUtils;
  */
 public class BeanDefinitionDefaults {
 
-	private boolean lazyInit;
+	@Nullable
+	private Boolean lazyInit;
 
 	private int autowireMode = AbstractBeanDefinition.AUTOWIRE_NO;
 
@@ -56,6 +57,17 @@ public class BeanDefinitionDefaults {
 	 * @return whether to apply lazy-init semantics ({@code false} by default)
 	 */
 	public boolean isLazyInit() {
+		return (this.lazyInit != null && this.lazyInit.booleanValue());
+	}
+
+	/**
+	 * Return whether beans should be lazily initialized by default, i.e. not
+	 * eagerly instantiated on startup. Only applicable to singleton beans.
+	 * @return the lazy-init flag if explicitly set, or {@code null} otherwise
+	 * @since 5.2
+	 */
+	@Nullable
+	public Boolean getLazyInit() {
 		return this.lazyInit;
 	}
 

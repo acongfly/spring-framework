@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.jdbc.core.support;
 
 import java.io.ByteArrayInputStream;
@@ -23,9 +24,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
@@ -33,9 +32,12 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.jdbc.support.lob.LobCreator;
 import org.springframework.jdbc.support.lob.LobHandler;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-import static org.mockito.BDDMockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * Test cases for the sql lob value:
@@ -54,9 +56,6 @@ import static org.mockito.BDDMockito.*;
  * @author Alef Arendsen
  */
 public class SqlLobValueTests  {
-
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
 
 	private PreparedStatement preparedStatement;
 	private LobHandler handler;
@@ -93,8 +92,8 @@ public class SqlLobValueTests  {
 	@Test
 	public void test3() throws SQLException {
 		SqlLobValue lob = new SqlLobValue(new InputStreamReader(new ByteArrayInputStream("Bla".getBytes())), 12);
-		thrown.expect(IllegalArgumentException.class);
-		lob.setTypeValue(preparedStatement, 1, Types.BLOB, "test");
+		assertThatIllegalArgumentException().isThrownBy(() ->
+				lob.setTypeValue(preparedStatement, 1, Types.BLOB, "test"));
 	}
 
 	@Test
@@ -113,7 +112,7 @@ public class SqlLobValueTests  {
 		verify(creator).setClobAsAsciiStream(eq(preparedStatement), eq(1), inputStreamCaptor.capture(), eq(3));
 		byte[] bytes = new byte[3];
 		inputStreamCaptor.getValue().read(bytes);
-		assertThat(bytes, equalTo(testContent));
+		assertThat(bytes).isEqualTo(testContent);
 	}
 
 	@Test
@@ -129,8 +128,8 @@ public class SqlLobValueTests  {
 	@Test
 	public void test7() throws SQLException {
 		SqlLobValue lob = new SqlLobValue("bla".getBytes());
-		thrown.expect(IllegalArgumentException.class);
-		lob.setTypeValue(preparedStatement, 1, Types.CLOB, "test");
+		assertThatIllegalArgumentException().isThrownBy(() ->
+				lob.setTypeValue(preparedStatement, 1, Types.CLOB, "test"));
 	}
 
 	@Test
@@ -140,14 +139,9 @@ public class SqlLobValueTests  {
 		SqlLobValue lob = new SqlLobValue("bla");
 		lob.setTypeValue(preparedStatement, 1, Types.CLOB, "test");
 
-		try {
-			lob = new SqlLobValue("bla".getBytes());
-			lob.setTypeValue(preparedStatement, 1, Types.CLOB, "test");
-			fail("IllegalArgumentException should have been thrown");
-		}
-		catch (IllegalArgumentException e) {
-			// expected
-		}
+		SqlLobValue lob2 = new SqlLobValue("bla".getBytes());
+		assertThatIllegalArgumentException().isThrownBy(() ->
+				lob2.setTypeValue(preparedStatement, 1, Types.CLOB, "test"));
 
 		lob = new SqlLobValue(new ByteArrayInputStream("bla".getBytes()), 3);
 		lob.setTypeValue(preparedStatement, 1, Types.CLOB, "test");
@@ -166,16 +160,10 @@ public class SqlLobValueTests  {
 		lob = new SqlLobValue(new ByteArrayInputStream("bla".getBytes()), 3);
 		lob.setTypeValue(preparedStatement, 1, Types.BLOB, "test");
 
-		lob = new SqlLobValue(new InputStreamReader(new ByteArrayInputStream(
+		SqlLobValue lob3 = new SqlLobValue(new InputStreamReader(new ByteArrayInputStream(
 				"bla".getBytes())), 3);
-
-		try {
-			lob.setTypeValue(preparedStatement, 1, Types.BLOB, "test");
-			fail("IllegalArgumentException should have been thrown");
-		}
-		catch (IllegalArgumentException e) {
-			// expected
-		}
+		assertThatIllegalArgumentException().isThrownBy(() ->
+				lob3.setTypeValue(preparedStatement, 1, Types.BLOB, "test"));
 	}
 
 	@Test
@@ -190,8 +178,8 @@ public class SqlLobValueTests  {
 	@Test
 	public void testOtherSqlType() throws SQLException {
 		SqlLobValue lob = new SqlLobValue("Bla", handler);
-		thrown.expect(IllegalArgumentException.class);
-		lob.setTypeValue(preparedStatement, 1, Types.SMALLINT, "test");
+		assertThatIllegalArgumentException().isThrownBy(() ->
+				lob.setTypeValue(preparedStatement, 1, Types.SMALLINT, "test"));
 	}
 
 }

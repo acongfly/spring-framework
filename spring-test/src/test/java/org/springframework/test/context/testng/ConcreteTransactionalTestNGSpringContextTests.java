@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2018 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,13 @@ import org.springframework.tests.sample.beans.Employee;
 import org.springframework.tests.sample.beans.Pet;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import static org.springframework.test.transaction.TransactionTestUtils.*;
-import static org.testng.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Combined integration test for {@link AbstractTestNGSpringContextTests} and
@@ -120,19 +124,19 @@ public class ConcreteTransactionalTestNGSpringContextTests extends AbstractTrans
 	@BeforeMethod
 	void setUp() {
 		numSetUpCalls++;
-		if (inTransaction()) {
+		if (TransactionSynchronizationManager.isActualTransactionActive()) {
 			numSetUpCallsInTransaction++;
 		}
-		assertNumRowsInPersonTable((inTransaction() ? 2 : 1), "before a test method");
+		assertNumRowsInPersonTable((TransactionSynchronizationManager.isActualTransactionActive() ? 2 : 1), "before a test method");
 	}
 
 	@AfterMethod
 	void tearDown() {
 		numTearDownCalls++;
-		if (inTransaction()) {
+		if (TransactionSynchronizationManager.isActualTransactionActive()) {
 			numTearDownCallsInTransaction++;
 		}
-		assertNumRowsInPersonTable((inTransaction() ? 4 : 1), "after a test method");
+		assertNumRowsInPersonTable((TransactionSynchronizationManager.isActualTransactionActive() ? 4 : 1), "after a test method");
 	}
 
 	@BeforeTransaction
@@ -151,7 +155,7 @@ public class ConcreteTransactionalTestNGSpringContextTests extends AbstractTrans
 	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	void verifyBeanNameSet() {
-		assertInTransaction(false);
+		assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
 		assertTrue(this.beanName.startsWith(getClass().getName()), "The bean name of this test instance " +
 				"should have been set to the fully qualified class name due to BeanNameAware semantics.");
 	}
@@ -159,7 +163,7 @@ public class ConcreteTransactionalTestNGSpringContextTests extends AbstractTrans
 	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	void verifyApplicationContextSet() {
-		assertInTransaction(false);
+		assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
 		assertNotNull(super.applicationContext,
 				"The application context should have been set due to ApplicationContextAware semantics.");
 		Employee employeeBean = (Employee) super.applicationContext.getBean("employee");
@@ -169,7 +173,7 @@ public class ConcreteTransactionalTestNGSpringContextTests extends AbstractTrans
 	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	void verifyBeanInitialized() {
-		assertInTransaction(false);
+		assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
 		assertTrue(beanInitialized,
 				"This test instance should have been initialized due to InitializingBean semantics.");
 	}
@@ -177,7 +181,7 @@ public class ConcreteTransactionalTestNGSpringContextTests extends AbstractTrans
 	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	void verifyAnnotationAutowiredFields() {
-		assertInTransaction(false);
+		assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
 		assertNull(nonrequiredLong, "The nonrequiredLong field should NOT have been autowired.");
 		assertNotNull(pet, "The pet field should have been autowired.");
 		assertEquals(pet.getName(), "Fido", "pet's name.");
@@ -186,7 +190,7 @@ public class ConcreteTransactionalTestNGSpringContextTests extends AbstractTrans
 	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	void verifyAnnotationAutowiredMethods() {
-		assertInTransaction(false);
+		assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
 		assertNotNull(employee, "The setEmployee() method should have been autowired.");
 		assertEquals(employee.getName(), "John Smith", "employee's name.");
 	}
@@ -194,20 +198,20 @@ public class ConcreteTransactionalTestNGSpringContextTests extends AbstractTrans
 	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	void verifyResourceAnnotationInjectedFields() {
-		assertInTransaction(false);
+		assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
 		assertEquals(foo, "Foo", "The foo field should have been injected via @Resource.");
 	}
 
 	@Test
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	void verifyResourceAnnotationInjectedMethods() {
-		assertInTransaction(false);
+		assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
 		assertEquals(bar, "Bar", "The setBar() method should have been injected via @Resource.");
 	}
 
 	@Test
 	void modifyTestDataWithinTransaction() {
-		assertInTransaction(true);
+		assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isTrue();
 		assertAddPerson(JANE);
 		assertAddPerson(SUE);
 		assertNumRowsInPersonTable(4, "in modifyTestDataWithinTransaction()");

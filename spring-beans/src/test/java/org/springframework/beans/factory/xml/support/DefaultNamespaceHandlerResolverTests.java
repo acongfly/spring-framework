@@ -22,7 +22,8 @@ import org.springframework.beans.factory.xml.DefaultNamespaceHandlerResolver;
 import org.springframework.beans.factory.xml.NamespaceHandler;
 import org.springframework.beans.factory.xml.UtilNamespaceHandler;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 /**
  * Unit and integration tests for the {@link DefaultNamespaceHandlerResolver} class.
@@ -36,28 +37,22 @@ public class DefaultNamespaceHandlerResolverTests {
 	public void testResolvedMappedHandler() {
 		DefaultNamespaceHandlerResolver resolver = new DefaultNamespaceHandlerResolver(getClass().getClassLoader());
 		NamespaceHandler handler = resolver.resolve("http://www.springframework.org/schema/util");
-		assertNotNull("Handler should not be null.", handler);
-		assertEquals("Incorrect handler loaded", UtilNamespaceHandler.class, handler.getClass());
+		assertThat(handler).as("Handler should not be null.").isNotNull();
+		assertThat(handler.getClass()).as("Incorrect handler loaded").isEqualTo(UtilNamespaceHandler.class);
 	}
 
 	@Test
 	public void testResolvedMappedHandlerWithNoArgCtor() {
 		DefaultNamespaceHandlerResolver resolver = new DefaultNamespaceHandlerResolver();
 		NamespaceHandler handler = resolver.resolve("http://www.springframework.org/schema/util");
-		assertNotNull("Handler should not be null.", handler);
-		assertEquals("Incorrect handler loaded", UtilNamespaceHandler.class, handler.getClass());
+		assertThat(handler).as("Handler should not be null.").isNotNull();
+		assertThat(handler.getClass()).as("Incorrect handler loaded").isEqualTo(UtilNamespaceHandler.class);
 	}
 
 	@Test
 	public void testNonExistentHandlerClass() {
 		String mappingPath = "org/springframework/beans/factory/xml/support/nonExistent.properties";
-		try {
-			new DefaultNamespaceHandlerResolver(getClass().getClassLoader(), mappingPath);
-			// pass
-		}
-		catch (Throwable ex) {
-			fail("Non-existent handler classes must be ignored: " + ex);
-		}
+		new DefaultNamespaceHandlerResolver(getClass().getClassLoader(), mappingPath);
 	}
 
 	@Test
@@ -66,9 +61,10 @@ public class DefaultNamespaceHandlerResolverTests {
 		new DefaultNamespaceHandlerResolver(null);
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test
 	public void testCtorWithNullClassLoaderArgumentAndNullMappingLocationArgument() {
-		new DefaultNamespaceHandlerResolver(null, null);
+		assertThatIllegalArgumentException().isThrownBy(() ->
+				new DefaultNamespaceHandlerResolver(null, null));
 	}
 
 	@Test

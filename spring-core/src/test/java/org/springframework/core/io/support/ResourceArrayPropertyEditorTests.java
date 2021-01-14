@@ -23,7 +23,8 @@ import org.junit.Test;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.core.io.Resource;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 /**
  * @author Dave Syer
@@ -36,8 +37,8 @@ public class ResourceArrayPropertyEditorTests {
 		PropertyEditor editor = new ResourceArrayPropertyEditor();
 		editor.setAsText("classpath:org/springframework/core/io/support/ResourceArrayPropertyEditor.class");
 		Resource[] resources = (Resource[]) editor.getValue();
-		assertNotNull(resources);
-		assertTrue(resources[0].exists());
+		assertThat(resources).isNotNull();
+		assertThat(resources[0].exists()).isTrue();
 	}
 
 	@Test
@@ -49,8 +50,8 @@ public class ResourceArrayPropertyEditorTests {
 		PropertyEditor editor = new ResourceArrayPropertyEditor();
 		editor.setAsText("classpath*:org/springframework/core/io/support/Resource*Editor.class");
 		Resource[] resources = (Resource[]) editor.getValue();
-		assertNotNull(resources);
-		assertTrue(resources[0].exists());
+		assertThat(resources).isNotNull();
+		assertThat(resources[0].exists()).isTrue();
 	}
 
 	@Test
@@ -60,21 +61,22 @@ public class ResourceArrayPropertyEditorTests {
 		try {
 			editor.setAsText("${test.prop}");
 			Resource[] resources = (Resource[]) editor.getValue();
-			assertEquals("foo", resources[0].getFilename());
+			assertThat(resources[0].getFilename()).isEqualTo("foo");
 		}
 		finally {
 			System.getProperties().remove("test.prop");
 		}
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test
 	public void testStrictSystemPropertyReplacementWithUnresolvablePlaceholder() {
 		PropertyEditor editor = new ResourceArrayPropertyEditor(
 				new PathMatchingResourcePatternResolver(), new StandardEnvironment(),
 				false);
 		System.setProperty("test.prop", "foo");
 		try {
-			editor.setAsText("${test.prop}-${bar}");
+			assertThatIllegalArgumentException().isThrownBy(() ->
+					editor.setAsText("${test.prop}-${bar}"));
 		}
 		finally {
 			System.getProperties().remove("test.prop");

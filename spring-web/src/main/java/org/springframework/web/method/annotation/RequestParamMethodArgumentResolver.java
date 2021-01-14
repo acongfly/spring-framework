@@ -20,6 +20,7 @@ import java.beans.PropertyEditor;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.Part;
 
@@ -216,6 +217,11 @@ public class RequestParamMethodArgumentResolver extends AbstractNamedValueMethod
 		String name = (requestParam != null && StringUtils.hasLength(requestParam.name()) ?
 				requestParam.name() : parameter.getParameterName());
 		Assert.state(name != null, "Unresolvable parameter name");
+
+		parameter = parameter.nestedIfOptional();
+		if (value instanceof Optional) {
+			value = ((Optional<?>) value).orElse(null);
+		}
 
 		if (value == null) {
 			if (requestParam != null &&

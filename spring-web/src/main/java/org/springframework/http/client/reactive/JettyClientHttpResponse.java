@@ -75,7 +75,8 @@ class JettyClientHttpResponse implements ClientHttpResponse {
 						.maxAge(cookie.getMaxAge())
 						.secure(cookie.getSecure())
 						.httpOnly(cookie.isHttpOnly())
-						.build())));
+						.build()))
+			);
 		}
 		return CollectionUtils.unmodifiableMultiValueMap(result);
 	}

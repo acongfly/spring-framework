@@ -24,6 +24,7 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -34,11 +35,11 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -70,6 +71,7 @@ import org.springframework.util.StringUtils;
  * @author Brian Clozel
  * @author Juergen Hoeller
  * @author Josh Long
+ * @author Sam Brannen
  * @since 3.0
  */
 public class HttpHeaders implements MultiValueMap<String, String>, Serializable {
@@ -437,6 +439,17 @@ public class HttpHeaders implements MultiValueMap<String, String>, Serializable 
 
 
 	/**
+	 * Get the list of header values for the given header name, if any.
+	 * @param headerName the header name
+	 * @return the list of header values, or an empty list
+	 * @since 5.2
+	 */
+	public List<String> getOrEmpty(Object headerName) {
+		List<String> values = get(headerName);
+		return (values != null ? values : Collections.emptyList());
+	}
+
+	/**
 	 * Set the list of acceptable {@linkplain MediaType media types},
 	 * as specified by the {@code Accept} header.
 	 */
@@ -596,6 +609,14 @@ public class HttpHeaders implements MultiValueMap<String, String>, Serializable 
 
 	/**
 	 * Set the (new) value of the {@code Access-Control-Max-Age} response header.
+	 * @since 5.2
+	 */
+	public void setAccessControlMaxAge(Duration maxAge) {
+		set(ACCESS_CONTROL_MAX_AGE, Long.toString(maxAge.getSeconds()));
+	}
+
+	/**
+	 * Set the (new) value of the {@code Access-Control-Max-Age} response header.
 	 */
 	public void setAccessControlMaxAge(long maxAge) {
 		set(ACCESS_CONTROL_MAX_AGE, Long.toString(maxAge));
@@ -644,15 +665,11 @@ public class HttpHeaders implements MultiValueMap<String, String>, Serializable 
 	 * as specified by the {@code Accept-Charset} header.
 	 */
 	public void setAcceptCharset(List<Charset> acceptableCharsets) {
-		StringBuilder builder = new StringBuilder();
-		for (Iterator<Charset> iterator = acceptableCharsets.iterator(); iterator.hasNext();) {
-			Charset charset = iterator.next();
-			builder.append(charset.name().toLowerCase(Locale.ENGLISH));
-			if (iterator.hasNext()) {
-				builder.append(", ");
-			}
+		StringJoiner joiner = new StringJoiner(", ");
+		for (Charset charset : acceptableCharsets) {
+			joiner.add(charset.name().toLowerCase(Locale.ENGLISH));
 		}
-		set(ACCEPT_CHARSET, builder.toString());
+		set(ACCEPT_CHARSET, joiner.toString());
 	}
 
 	/**
@@ -941,6 +958,24 @@ public class HttpHeaders implements MultiValueMap<String, String>, Serializable 
 	/**
 	 * Set the date and time at which the message was created, as specified
 	 * by the {@code Date} header.
+	 * @since 5.2
+	 */
+	public void setDate(ZonedDateTime date) {
+		setZonedDateTime(DATE, date);
+	}
+
+	/**
+	 * Set the date and time at which the message was created, as specified
+	 * by the {@code Date} header.
+	 * @since 5.2
+	 */
+	public void setDate(Instant date) {
+		setInstant(DATE, date);
+	}
+
+	/**
+	 * Set the date and time at which the message was created, as specified
+	 * by the {@code Date} header.
 	 * <p>The date should be specified as the number of milliseconds since
 	 * January 1, 1970 GMT.
 	 */
@@ -989,6 +1024,15 @@ public class HttpHeaders implements MultiValueMap<String, String>, Serializable 
 	 */
 	public void setExpires(ZonedDateTime expires) {
 		setZonedDateTime(EXPIRES, expires);
+	}
+
+	/**
+	 * Set the date and time at which the message is no longer valid,
+	 * as specified by the {@code Expires} header.
+	 * @since 5.2
+	 */
+	public void setExpires(Instant expires) {
+		setInstant(EXPIRES, expires);
 	}
 
 	/**
@@ -1517,17 +1561,13 @@ public class HttpHeaders implements MultiValueMap<String, String>, Serializable 
 	 * @return a combined result with comma delimitation
 	 */
 	protected String toCommaDelimitedString(List<String> headerValues) {
-		StringBuilder builder = new StringBuilder();
-		for (Iterator<String> it = headerValues.iterator(); it.hasNext();) {
-			String val = it.next();
+		StringJoiner joiner = new StringJoiner(", ");
+		for (String val : headerValues) {
 			if (val != null) {
-				builder.append(val);
-				if (it.hasNext()) {
-					builder.append(", ");
-				}
+				joiner.add(val);
 			}
 		}
-		return builder.toString();
+		return joiner.toString();
 	}
 
 	/**

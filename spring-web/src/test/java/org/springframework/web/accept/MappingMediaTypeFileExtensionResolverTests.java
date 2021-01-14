@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.junit.Test;
 
 import org.springframework.http.MediaType;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Test fixture for {@link MappingMediaTypeFileExtensionResolver}.
@@ -39,8 +39,8 @@ public class MappingMediaTypeFileExtensionResolverTests {
 		MappingMediaTypeFileExtensionResolver resolver = new MappingMediaTypeFileExtensionResolver(mapping);
 		List<String> extensions = resolver.resolveFileExtensions(MediaType.APPLICATION_JSON);
 
-		assertEquals(1, extensions.size());
-		assertEquals("json", extensions.get(0));
+		assertThat(extensions.size()).isEqualTo(1);
+		assertThat(extensions.get(0)).isEqualTo("json");
 	}
 
 	@Test
@@ -49,7 +49,7 @@ public class MappingMediaTypeFileExtensionResolverTests {
 		MappingMediaTypeFileExtensionResolver resolver = new MappingMediaTypeFileExtensionResolver(mapping);
 		List<String> extensions = resolver.resolveFileExtensions(MediaType.TEXT_HTML);
 
-		assertTrue(extensions.isEmpty());
+		assertThat(extensions.isEmpty()).isTrue();
 	}
 
 	/**
@@ -62,7 +62,7 @@ public class MappingMediaTypeFileExtensionResolverTests {
 		MappingMediaTypeFileExtensionResolver resolver = new MappingMediaTypeFileExtensionResolver(mapping);
 		MediaType mediaType = resolver.lookupMediaType("JSON");
 
-		assertEquals(MediaType.APPLICATION_JSON, mediaType);
+		assertThat(mediaType).isEqualTo(MediaType.APPLICATION_JSON);
 	}
 
 }

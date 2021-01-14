@@ -42,7 +42,7 @@ import org.springframework.lang.Nullable;
  * @see org.springframework.transaction.support.TransactionTemplate
  * @see org.springframework.transaction.interceptor.TransactionInterceptor
  */
-public interface PlatformTransactionManager {
+public interface PlatformTransactionManager extends TransactionManager {
 
 	/**
 	 * Return a currently active transaction or create a new one, according to

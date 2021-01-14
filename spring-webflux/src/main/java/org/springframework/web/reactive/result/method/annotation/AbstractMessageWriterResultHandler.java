@@ -16,12 +16,16 @@
 
 package org.springframework.web.reactive.result.method.annotation;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import kotlin.reflect.KFunction;
+import kotlin.reflect.jvm.ReflectJvmMapping;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
+import org.springframework.core.KotlinDetector;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ReactiveAdapter;
 import org.springframework.core.ReactiveAdapterRegistry;
@@ -45,6 +49,8 @@ import org.springframework.web.server.ServerWebExchange;
  * @since 5.0
  */
 public abstract class AbstractMessageWriterResultHandler extends HandlerResultHandlerSupport {
+
+	private static final String COROUTINES_FLOW_CLASS_NAME = "kotlinx.coroutines.flow.Flow";
 
 	private final List<HttpMessageWriter<?>> messageWriters;
 
@@ -108,7 +114,7 @@ public abstract class AbstractMessageWriterResultHandler extends HandlerResultHa
 	 * @return indicates completion or error
 	 * @since 5.0.2
 	 */
-	@SuppressWarnings({"unchecked", "rawtypes"})
+	@SuppressWarnings({"unchecked", "rawtypes", "ConstantConditions"})
 	protected Mono<Void> writeBody(@Nullable Object body, MethodParameter bodyParameter,
 			@Nullable MethodParameter actualParam, ServerWebExchange exchange) {
 
@@ -118,15 +124,21 @@ public abstract class AbstractMessageWriterResultHandler extends HandlerResultHa
 
 		Publisher<?> publisher;
 		ResolvableType elementType;
+		ResolvableType actualElementType;
 		if (adapter != null) {
 			publisher = adapter.toPublisher(body);
-			ResolvableType genericType = bodyType.getGeneric();
+			boolean isUnwrapped = KotlinDetector.isKotlinReflectPresent() &&
+					KotlinDetector.isKotlinType(bodyParameter.getContainingClass()) &&
+					KotlinDelegate.isSuspend(bodyParameter.getMethod()) &&
+					!COROUTINES_FLOW_CLASS_NAME.equals(bodyType.toClass().getName());
+			ResolvableType genericType = isUnwrapped ? bodyType : bodyType.getGeneric();
 			elementType = getElementType(adapter, genericType);
+			actualElementType = elementType;
 		}
 		else {
 			publisher = Mono.justOrEmpty(body);
-			elementType = (bodyType.toClass() == Object.class && body != null ?
-					ResolvableType.forInstance(body) : bodyType);
+			actualElementType = body != null ? ResolvableType.forInstance(body) : bodyType;
+			elementType = (bodyType.toClass() == Object.class && body != null ? actualElementType : bodyType);
 		}
 
 		if (elementType.resolve() == void.class || elementType.resolve() == Void.class) {
@@ -141,7 +153,7 @@ public abstract class AbstractMessageWriterResultHandler extends HandlerResultHa
 						(publisher instanceof Mono ? "0..1" : "0..N") + " [" + elementType + "]");
 			}
 			for (HttpMessageWriter<?> writer : getMessageWriters()) {
-				if (writer.canWrite(elementType, bestMediaType)) {
+				if (writer.canWrite(actualElementType, bestMediaType)) {
 					return writer.write((Publisher) publisher, actualType, elementType,
 							bestMediaType, exchange.getRequest(), exchange.getResponse(),
 							Hints.from(Hints.LOG_PREFIX_HINT, logPrefix));
@@ -176,6 +188,18 @@ public abstract class AbstractMessageWriterResultHandler extends HandlerResultHa
 			}
 		}
 		return writableMediaTypes;
+	}
+
+
+	/**
+	 * Inner class to avoid a hard dependency on Kotlin at runtime.
+	 */
+	private static class KotlinDelegate {
+
+		static private boolean isSuspend(Method method) {
+			KFunction<?> function = ReflectJvmMapping.getKotlinFunction(method);
+			return function != null && function.isSuspend();
+		}
 	}
 
 }

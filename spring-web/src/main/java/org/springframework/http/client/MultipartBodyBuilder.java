@@ -22,13 +22,16 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Mono;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.ResolvableTypeProvider;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.multipart.Part;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
@@ -123,14 +126,20 @@ public final class MultipartBodyBuilder {
 	/**
 	 * Add an asynchronous part with {@link Publisher}-based content.
 	 * @param name the name of the part to add
-	 * @param publisher the part contents
+	 * @param publisher a Publisher of content for the part
 	 * @param elementClass the type of elements contained in the publisher
 	 * @return builder that allows for further customization of part headers
 	 */
+	@SuppressWarnings("unchecked")
 	public <T, P extends Publisher<T>> PartBuilder asyncPart(String name, P publisher, Class<T> elementClass) {
 		Assert.hasLength(name, "'name' must not be empty");
 		Assert.notNull(publisher, "'publisher' must not be null");
 		Assert.notNull(elementClass, "'elementClass' must not be null");
+
+		if (Part.class.isAssignableFrom(elementClass)) {
+			publisher = (P) Mono.from(publisher).flatMapMany(p -> ((Part) p).content());
+			elementClass = (Class<T>) DataBuffer.class;
+		}
 
 		HttpHeaders headers = new HttpHeaders();
 		PublisherPartBuilder<T, P> builder = new PublisherPartBuilder<>(headers, publisher, elementClass);

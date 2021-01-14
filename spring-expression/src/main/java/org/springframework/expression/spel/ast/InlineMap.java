@@ -40,8 +40,8 @@ public class InlineMap extends SpelNodeImpl {
 	private TypedValue constant;
 
 
-	public InlineMap(int pos, SpelNodeImpl... args) {
-		super(pos, args);
+	public InlineMap(int startPos, int endPos, SpelNodeImpl... args) {
+		super(startPos, endPos, args);
 		checkIfConstant();
 	}
 

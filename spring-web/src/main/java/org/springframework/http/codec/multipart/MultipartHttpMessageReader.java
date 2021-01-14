@@ -89,6 +89,7 @@ public class MultipartHttpMessageReader extends LoggingCodecSupport
 	public Mono<MultiValueMap<String, Part>> readMono(ResolvableType elementType,
 			ReactiveHttpInputMessage inputMessage, Map<String, Object> hints) {
 
+
 		Map<String, Object> allHints = Hints.merge(hints, Hints.SUPPRESS_LOGGING_HINT, true);
 
 		return this.partReader.read(elementType, inputMessage, allHints)
@@ -97,7 +98,8 @@ public class MultipartHttpMessageReader extends LoggingCodecSupport
 					LogFormatUtils.traceDebug(logger, traceOn -> Hints.getLogPrefix(hints) + "Parsed " +
 							(isEnableLoggingRequestDetails() ?
 									LogFormatUtils.formatValue(map, !traceOn) :
-									"parts " + map.keySet() + " (content masked)")))
+									"parts " + map.keySet() + " (content masked)"))
+				)
 				.map(this::toMultiValueMap);
 	}
 

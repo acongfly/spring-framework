@@ -33,6 +33,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -138,6 +139,8 @@ class ConfigurationClassParser {
 	private final ImportStack importStack = new ImportStack();
 
 	private final DeferredImportSelectorHandler deferredImportSelectorHandler = new DeferredImportSelectorHandler();
+
+	private final SourceClass objectSourceClass = new SourceClass(Object.class);
 
 
 	/**
@@ -635,13 +638,13 @@ class ConfigurationClassParser {
 	 * Factory method to obtain a {@link SourceClass} from a {@link Class}.
 	 */
 	SourceClass asSourceClass(@Nullable Class<?> classType) throws IOException {
-		if (classType == null) {
-			return new SourceClass(Object.class);
+		if (classType == null || classType.getName().startsWith("java.lang.annotation.")) {
+			return this.objectSourceClass;
 		}
 		try {
 			// Sanity test that we can reflectively read annotations,
 			// including Class attributes; if not -> fall back to ASM
-			for (Annotation ann : classType.getAnnotations()) {
+			for (Annotation ann : classType.getDeclaredAnnotations()) {
 				AnnotationUtils.validateAnnotation(ann);
 			}
 			return new SourceClass(classType);
@@ -667,19 +670,22 @@ class ConfigurationClassParser {
 	 * Factory method to obtain a {@link SourceClass} from a class name.
 	 */
 	SourceClass asSourceClass(@Nullable String className) throws IOException {
-		if (className == null) {
-			return new SourceClass(Object.class);
+		if (className == null || className.startsWith("java.lang.annotation.")) {
+			return this.objectSourceClass;
 		}
 		if (className.startsWith("java")) {
 			// Never use ASM for core java types
 			try {
-				return new SourceClass(ClassUtils.forName(className, this.resourceLoader.getClassLoader()));
+				return new SourceClass(ClassUtils.forName(className,
+						this.resourceLoader.getClassLoader()));
 			}
 			catch (ClassNotFoundException ex) {
-				throw new NestedIOException("Failed to load class [" + className + "]", ex);
+				throw new NestedIOException(
+						"Failed to load class [" + className + "]", ex);
 			}
 		}
-		return new SourceClass(this.metadataReaderFactory.getMetadataReader(className));
+		return new SourceClass(
+				this.metadataReaderFactory.getMetadataReader(className));
 	}
 
 
@@ -721,15 +727,11 @@ class ConfigurationClassParser {
 		 */
 		@Override
 		public String toString() {
-			StringBuilder builder = new StringBuilder("[");
-			Iterator<ConfigurationClass> iterator = iterator();
-			while (iterator.hasNext()) {
-				builder.append(iterator.next().getSimpleName());
-				if (iterator.hasNext()) {
-					builder.append("->");
-				}
+			StringJoiner joiner = new StringJoiner("->", "[", "]");
+			for (ConfigurationClass configurationClass : this) {
+				joiner.add(configurationClass.getSimpleName());
 			}
-			return builder.append(']').toString();
+			return joiner.toString();
 		}
 	}
 
@@ -911,7 +913,7 @@ class ConfigurationClassParser {
 		public SourceClass(Object source) {
 			this.source = source;
 			if (source instanceof Class) {
-				this.metadata = new StandardAnnotationMetadata((Class<?>) source, true);
+				this.metadata = AnnotationMetadata.introspect((Class<?>) source);
 			}
 			else {
 				this.metadata = ((MetadataReader) source).getAnnotationMetadata();
@@ -1015,7 +1017,7 @@ class ConfigurationClassParser {
 			Set<SourceClass> result = new LinkedHashSet<>();
 			if (this.source instanceof Class) {
 				Class<?> sourceClass = (Class<?>) this.source;
-				for (Annotation ann : sourceClass.getAnnotations()) {
+				for (Annotation ann : sourceClass.getDeclaredAnnotations()) {
 					Class<?> annType = ann.annotationType();
 					if (!annType.getName().startsWith("java")) {
 						try {

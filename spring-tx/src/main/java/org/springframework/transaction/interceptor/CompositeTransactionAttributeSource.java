@@ -54,6 +54,16 @@ public class CompositeTransactionAttributeSource implements TransactionAttribute
 
 
 	@Override
+	public boolean isCandidateClass(Class<?> targetClass) {
+		for (TransactionAttributeSource source : this.transactionAttributeSources) {
+			if (source.isCandidateClass(targetClass)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Override
 	@Nullable
 	public TransactionAttribute getTransactionAttribute(Method method, @Nullable Class<?> targetClass) {
 		for (TransactionAttributeSource source : this.transactionAttributeSources) {

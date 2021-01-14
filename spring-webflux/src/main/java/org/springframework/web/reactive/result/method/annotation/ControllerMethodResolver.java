@@ -32,6 +32,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.KotlinDetector;
 import org.springframework.core.MethodIntrospector;
 import org.springframework.core.ReactiveAdapterRegistry;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -177,7 +178,7 @@ class ControllerMethodResolver {
 		result.add(new MatrixVariableMethodArgumentResolver(beanFactory, adapterRegistry));
 		result.add(new MatrixVariableMapMethodArgumentResolver(adapterRegistry));
 		if (!readers.isEmpty()) {
-			result.add(new RequestBodyArgumentResolver(readers, adapterRegistry));
+			result.add(new RequestBodyMethodArgumentResolver(readers, adapterRegistry));
 			result.add(new RequestPartMethodArgumentResolver(readers, adapterRegistry));
 		}
 		if (supportDataBinding) {
@@ -191,19 +192,22 @@ class ControllerMethodResolver {
 		result.add(new RequestAttributeMethodArgumentResolver(beanFactory, adapterRegistry));
 
 		// Type-based...
-		if (!readers.isEmpty()) {
-			result.add(new HttpEntityArgumentResolver(readers, adapterRegistry));
+		if (KotlinDetector.isKotlinPresent()) {
+			result.add(new ContinuationHandlerMethodArgumentResolver());
 		}
-		result.add(new ModelArgumentResolver(adapterRegistry));
+		if (!readers.isEmpty()) {
+			result.add(new HttpEntityMethodArgumentResolver(readers, adapterRegistry));
+		}
+		result.add(new ModelMethodArgumentResolver(adapterRegistry));
 		if (supportDataBinding) {
 			result.add(new ErrorsMethodArgumentResolver(adapterRegistry));
 		}
-		result.add(new ServerWebExchangeArgumentResolver(adapterRegistry));
-		result.add(new PrincipalArgumentResolver(adapterRegistry));
+		result.add(new ServerWebExchangeMethodArgumentResolver(adapterRegistry));
+		result.add(new PrincipalMethodArgumentResolver(adapterRegistry));
 		if (requestMappingMethod) {
 			result.add(new SessionStatusMethodArgumentResolver());
 		}
-		result.add(new WebSessionArgumentResolver(adapterRegistry));
+		result.add(new WebSessionMethodArgumentResolver(adapterRegistry));
 
 		// Custom...
 		result.addAll(customResolvers.getCustomResolvers());
@@ -347,10 +351,11 @@ class ControllerMethodResolver {
 
 		if (targetMethod == null) {
 			// Global exception handlers...
-			for (ControllerAdviceBean advice : this.exceptionHandlerAdviceCache.keySet()) {
+			for (Map.Entry<ControllerAdviceBean, ExceptionHandlerMethodResolver> entry : this.exceptionHandlerAdviceCache.entrySet()) {
+				ControllerAdviceBean advice = entry.getKey();
 				if (advice.isApplicableToBeanType(handlerType)) {
 					targetBean = advice.resolveBean();
-					targetMethod = this.exceptionHandlerAdviceCache.get(advice).resolveMethodByThrowable(ex);
+					targetMethod = entry.getValue().resolveMethodByThrowable(ex);
 					if (targetMethod != null) {
 						break;
 					}

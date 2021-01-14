@@ -178,6 +178,26 @@ public class UrlPathHelper {
 	}
 
 	/**
+	 * Variant of {@link #getLookupPathForRequest(HttpServletRequest)} that
+	 * automates checking for a previously computed lookupPath saved as a
+	 * request attribute. The attribute is only used for lookup purposes.
+	 * @param request current HTTP request
+	 * @param lookupPathAttributeName the request attribute to check
+	 * @return the lookup path
+	 * @since 5.2
+	 * @see org.springframework.web.servlet.HandlerMapping#LOOKUP_PATH
+	 */
+	public String getLookupPathForRequest(HttpServletRequest request, @Nullable String lookupPathAttributeName) {
+		if (lookupPathAttributeName != null) {
+			String result = (String) request.getAttribute(lookupPathAttributeName);
+			if (result != null) {
+				return result;
+			}
+		}
+		return getLookupPathForRequest(request);
+	}
+
+	/**
 	 * Return the path within the servlet mapping for the given request,
 	 * i.e. the part of the request's URL beyond the part that called the servlet,
 	 * or "" if the whole URL has been used to identify the servlet.
