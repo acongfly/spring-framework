@@ -53,6 +53,7 @@ import org.springframework.lang.Nullable;
  * @see #getResourceByPath
  * @see GenericApplicationContext
  */
+//文件系统路径获取配置文件【绝对路径】
 public class FileSystemXmlApplicationContext extends AbstractXmlApplicationContext {
 
 	/**
