@@ -546,48 +546,49 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		return this.applicationListeners;
 	}
 
+	//方法 refresh()方法是 spring 容器启动过程中的核心方法，spring 容器要加载必须执行该方法。此为spring初始化的核心方法。spring容器加载的方法有四种
 	@Override
 	public void refresh() throws BeansException, IllegalStateException {
 		synchronized (this.startupShutdownMonitor) {
 			StartupStep contextRefresh = this.applicationStartup.start("spring.context.refresh");
 
-			// Prepare this context for refreshing.
+			// Prepare this context for refreshing. 准备此上下文以进行刷新。设置启动时间以及active标志，初始化属性
 			prepareRefresh();
 
-			// Tell the subclass to refresh the internal bean factory.
+			// Tell the subclass to refresh the internal bean factory. 告诉子类刷新内部bean工厂。
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
-			// Prepare the bean factory for use in this context.
+			// Prepare the bean factory for use in this context. 准备在这种情况下使用的bean工厂，设置beanFactory的基本属性
 			prepareBeanFactory(beanFactory);
 
 			try {
-				// Allows post-processing of the bean factory in context subclasses.
+				// Allows post-processing of the bean factory in context subclasses. 允许在上下文子类中对bean工厂进行后处理。 子类处理自定义的BeanFactoryPostProcess
 				postProcessBeanFactory(beanFactory);
 
 				StartupStep beanPostProcess = this.applicationStartup.start("spring.context.beans.post-process");
-				// Invoke factory processors registered as beans in the context.
+				// Invoke factory processors registered as beans in the context. 调用在上下文中注册为bean的工厂处理器。
 				invokeBeanFactoryPostProcessors(beanFactory);
 
-				// Register bean processors that intercept bean creation.
+				// Register bean processors that intercept bean creation.  注册拦截Bean创建的Bean处理器。 注册，把实现了BeanPostProcessor接口的类实例化，加到BeanFactory
 				registerBeanPostProcessors(beanFactory);
 				beanPostProcess.end();
 
-				// Initialize message source for this context.
+				// Initialize message source for this context. 为此上下文初始化消息源。  初始化上下文中的资源文件，如国际化文件的处理等
 				initMessageSource();
 
-				// Initialize event multicaster for this context.
+				// Initialize event multicaster for this context. 为此上下文初始化事件多播器。
 				initApplicationEventMulticaster();
 
-				// Initialize other special beans in specific context subclasses.
+				// Initialize other special beans in specific context subclasses.在特定上下文子类中初始化其他特殊bean  给子类扩展初始化其他Bean，springboot 中用来做内嵌 tomcat 启动
 				onRefresh();
 
-				// Check for listener beans and register them.
+				// Check for listener beans and register them. 检查侦听器bean并注册它们。  在所有bean中查找监听 bean，然后注册到广播器中
 				registerListeners();
 
-				// Instantiate all remaining (non-lazy-init) singletons.
+				// Instantiate all remaining (non-lazy-init) singletons.  实例化所有剩余的（非延迟初始化）单例。 初始化所有的单例Bean、ioc、BeanPostProcessor的执行、Aop入口
 				finishBeanFactoryInitialization(beanFactory);
 
-				// Last step: publish corresponding event.
+				// Last step: publish corresponding event.  最后一步：发布相应的事件。 完成刷新过程，发布相应的事件
 				finishRefresh();
 			}
 
