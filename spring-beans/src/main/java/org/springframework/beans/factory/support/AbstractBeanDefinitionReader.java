@@ -196,6 +196,7 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 	}
 
 	/**
+	 * 字符串类型的xml文件路径,转换成Resource对象类型。
 	 * Load bean definitions from the specified resource location.
 	 * <p>The location can also be a location pattern, provided that the
 	 * ResourceLoader of this bean definition reader is a ResourcePatternResolver.
@@ -204,6 +205,12 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 	 * @param actualResources a Set to be filled with the actual Resource objects
 	 * that have been resolved during the loading process. May be {@code null}
 	 * to indicate that the caller is not interested in those Resource objects.
+	 *  从指定的资源位置加载bean定义。
+	 *  <p>如果此bean定义阅读器的ResourceLoader是ResourcePatternResolver，则位置也可以是位置模式。
+	 *  @param location 此bean定义阅读器的ResourceLoader
+	 * （或ResourcePatternResolver）将加载的资源位置
+	 *  @param actualResources 一个Set，该Set将填充在加载过程中已解析的实际Resource对象。可能为{@code null} ，
+	 *   表示调用者对那些Resource对象不感兴趣。
 	 * @return the number of bean definitions found
 	 * @throws BeanDefinitionStoreException in case of loading or parsing errors
 	 * @see #getResourceLoader()
@@ -253,7 +260,9 @@ public abstract class AbstractBeanDefinitionReader implements BeanDefinitionRead
 	public int loadBeanDefinitions(String... locations) throws BeanDefinitionStoreException {
 		Assert.notNull(locations, "Location array must not be null");
 		int count = 0;
+		//多个配置文件，加载多个
 		for (String location : locations) {
+
 			count += loadBeanDefinitions(location);
 		}
 		return count;

@@ -549,46 +549,119 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	//方法 refresh()方法是 spring 容器启动过程中的核心方法，spring 容器要加载必须执行该方法。此为spring初始化的核心方法。spring容器加载的方法有四种
 	@Override
 	public void refresh() throws BeansException, IllegalStateException {
+		/**
+		 * TODO :使用对象锁startUpShutdownMonitor进行同步控制:
+		 * 1、避免了多线程同时刷新spring配置,只对不能并发的代码块进行加锁,
+		 *   提高了整体代码运行的效率;
+		 * 2、refresh()方法和 close()方法都使用了startUpShutdownMonitor对象锁加锁，
+		 *   这就保证了在调用refresh()方法的时候无法调用close()方法,避免了冲突;
+		 **/
 		synchronized (this.startupShutdownMonitor) {
+			///spring的监控
 			StartupStep contextRefresh = this.applicationStartup.start("spring.context.refresh");
 
 			// Prepare this context for refreshing. 准备此上下文以进行刷新。设置启动时间以及active标志，初始化属性
+			/**
+			 * TODO : 准备此上下文用于刷新
+			 * 1、设置其启动日期和active标志
+			 * 2、执行属性源的初始化。
+			 */
 			prepareRefresh();
 
+			/**
+			 * TODO : 创建填充BeanFactory功能，以及创建填充XmlBeanDefinitionReader对象
+			 *    重要程度：5
+			 * 1、创建BeanFactory对象
+			 * 2、xml解析
+			 * 	传统标签解析：bean、import等
+			 * 	自定义标签解析 如：<context:component-scan base-package="com.XXX.XXX"/>
+			 * 	自定义标签解析流程：
+			 * 		a、根据当前解析标签的头信息找到对应的 namespaceUri
+			 * 		b、加载 spring 所有jar中的 spring.handlers 文件，并建立映射关系
+			 * 		c、根据 namespaceUri 从映射关系中找到对应的实现了 NamespaceHandler 接口的类
+			 * 		d、调用类的 init 方法， init 方法是注册了各种自定义标签的解析类
+			 * 		e、根据 namespaceUri 找到对应的解析类，然后调用 paser 方法完成标签解析
+			 *
+			 * 3、把解析出来的xml标签封装成 BeanDefinition 对象
+			 * */
 			// Tell the subclass to refresh the internal bean factory. 告诉子类刷新内部bean工厂。
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// Prepare the bean factory for use in this context. 准备在这种情况下使用的bean工厂，设置beanFactory的基本属性
+			/**
+			 * 给beanFactory设置一些属性值，可以不看
+			 * */
 			prepareBeanFactory(beanFactory);
 
 			try {
 				// Allows post-processing of the bean factory in context subclasses. 允许在上下文子类中对bean工厂进行后处理。 子类处理自定义的BeanFactoryPostProcess
+				/**
+				 * 提供子类覆盖的额外处理，即子类处理自定义的BeanFactoryPostProcess
+				 * (如果有某个bean实现了BeanFactoryPostProcessor接口，那么在容器初始化以后，
+				 * Spring会自动调用里面的postProcessBeanFactory方法)
+				 */
 				postProcessBeanFactory(beanFactory);
 
 				StartupStep beanPostProcess = this.applicationStartup.start("spring.context.beans.post-process");
 				// Invoke factory processors registered as beans in the context. 调用在上下文中注册为bean的工厂处理器。
+				/**
+				 * BeanDefinitionRegistryPostProcessor
+				 * BeanFactoryPostProcessor
+				 * 完成对这两个接口的调用
+				 * */
+				// Invoke factory processors registered as beans in the context.
+				// 激活各种 BeanFactory 处理器，并调用 BeanFactoryPostProcessor 各个实现类
+				// 的 postProcessBeanFactory(factory) 方法
 				invokeBeanFactoryPostProcessors(beanFactory);
 
+				/**
+				 * 把实现了BeanPostProcessor接口的类实例化，并且加入到BeanFactory中
+				 * */
+				// Register bean processors that intercept bean creation.
+				// 注册拦截 Bean创建的 Bean处理器，即注册 BeanPostProcessor
 				// Register bean processors that intercept bean creation.  注册拦截Bean创建的Bean处理器。 注册，把实现了BeanPostProcessor接口的类实例化，加到BeanFactory
 				registerBeanPostProcessors(beanFactory);
 				beanPostProcess.end();
 
 				// Initialize message source for this context. 为此上下文初始化消息源。  初始化上下文中的资源文件，如国际化文件的处理等
+				// 初始化上下文中的资源文件，如国际化文件的处理等
 				initMessageSource();
 
 				// Initialize event multicaster for this context. 为此上下文初始化事件多播器。
+				//初始化上下文事件广播器（事件广播和监听机制是典型的观察者模式的实现）
 				initApplicationEventMulticaster();
 
 				// Initialize other special beans in specific context subclasses.在特定上下文子类中初始化其他特殊bean  给子类扩展初始化其他Bean，springboot 中用来做内嵌 tomcat 启动
+				// 这个方法着重理解模板设计模式，因为在 springboot 中，这个方法是用来做内嵌 tomcat 启动的
+				// Initialize other special beans in specific context subclasses.
+				// 给子类扩展初始化其他Bean
 				onRefresh();
 
 				// Check for listener beans and register them. 检查侦听器bean并注册它们。  在所有bean中查找监听 bean，然后注册到广播器中
+				/**
+				 * 往事件管理类中注册事件类
+				 * */
+				// Check for listener beans and register them.
+				// 在所有bean中查找listener bean，然后注册到广播器中
 				registerListeners();
 
+				/**
+				 * 这个方法是spring中最重要的方法，没有之一
+				 * 所以这个方法一定要理解要具体看
+				 * TODO : 初始化所有的单例Bean(非延迟加载的)
+				 * 1、bean实例化过程
+				 * 2、ioc
+				 * 3、注解支持
+				 * 4、BeanPostProcessor的执行
+				 * 5、Aop的入口
+				 *
+				 * */
 				// Instantiate all remaining (non-lazy-init) singletons.  实例化所有剩余的（非延迟初始化）单例。 初始化所有的单例Bean、ioc、BeanPostProcessor的执行、Aop入口
 				finishBeanFactoryInitialization(beanFactory);
 
 				// Last step: publish corresponding event.  最后一步：发布相应的事件。 完成刷新过程，发布相应的事件
+				// 完成刷新过程,通知生命周期处理器 lifecycleProcessor 刷新过程,同时发出
+				// ContextRefreshEvent 通知别人
 				finishRefresh();
 			}
 
@@ -636,10 +709,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			}
 		}
 
-		// Initialize any placeholder property sources in the context environment.
+		// Initialize any placeholder property sources in the context environment.  在上下文环境中初始化任何占位符属性源。
 		initPropertySources();
 
-		// Validate that all properties marked as required are resolvable:
+		// Validate that all properties marked as required are resolvable:  验证所有标记为必需的属性都是可解析的：
 		// see ConfigurablePropertyResolver#setRequiredProperties
 		getEnvironment().validateRequiredProperties();
 

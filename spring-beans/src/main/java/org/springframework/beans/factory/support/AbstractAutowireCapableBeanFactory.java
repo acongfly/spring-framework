@@ -124,7 +124,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		implements AutowireCapableBeanFactory {
 
 	/**
-	 * Whether this environment lives within a native image.
+	 * Whether this environment lives within a native image.  此环境是否存在于本地映像中。
 	 * Exposed as a private static field rather than in a {@code NativeImageDetector.inNativeImage()} static method due to https://github.com/oracle/graal/issues/2594.
 	 * @see <a href="https://github.com/oracle/graal/blob/master/sdk/src/org.graalvm.nativeimage/src/org/graalvm/nativeimage/ImageInfo.java">ImageInfo.java</a>
 	 */
@@ -156,6 +156,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	/**
 	 * Dependency interfaces to ignore on dependency check and autowire, as Set of
 	 * Class objects. By default, only the BeanFactory interface is ignored.
+	 *
+	 * 依赖关系接口忽略依赖检查和自动装配，如类对象的集合。默认情况下，仅BeanFactory接口被忽略
 	 */
 	private final Set<Class<?>> ignoredDependencyInterfaces = new HashSet<>();
 
